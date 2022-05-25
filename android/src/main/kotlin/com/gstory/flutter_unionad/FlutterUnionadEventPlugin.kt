@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.PluginRegistry
 
 /**
  * @Description:
@@ -26,6 +27,11 @@ class FlutterUnionadEventPlugin : FlutterPlugin, EventChannel.StreamHandler {
         fun sendError(errorCode: String, errorMessage: String, content: MutableMap<String, Any?>) {
             eventSink?.error(errorCode, errorMessage, content)
         }
+
+        fun registerWith(registrar: PluginRegistry.Registrar) {
+            val instance = FlutterUnionadEventPlugin()
+            instance.onAttachedEngine(registrar.messenger(), registrar.activeContext())
+        }
     }
 
     override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
@@ -36,10 +42,17 @@ class FlutterUnionadEventPlugin : FlutterPlugin, EventChannel.StreamHandler {
         eventSink = null
     }
 
-    override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-        eventChannel = EventChannel(binding.binaryMessenger, FlutterunionadViewConfig.adevent)
+    private fun onAttachedEngine(
+        messenger: io.flutter.plugin.common.BinaryMessenger,
+        activeContext: Context
+    ) {
+        eventChannel = EventChannel(messenger, FlutterunionadViewConfig.adevent)
         eventChannel!!.setStreamHandler(this)
-        context = binding.applicationContext
+        context = activeContext
+    }
+
+    override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+        onAttachedEngine(binding.binaryMessenger, binding.applicationContext)
     }
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
