@@ -24,8 +24,6 @@ import io.flutter.plugin.common.PluginRegistry.Registrar
 public class FlutterUnionadPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     private lateinit var channel: MethodChannel
-    private var applicationContext: Context? = null
-    private var mActivity: Activity? = null
     private var mFlutterPluginBinding: FlutterPlugin.FlutterPluginBinding? = null
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
@@ -63,11 +61,18 @@ public class FlutterUnionadPlugin : FlutterPlugin, MethodCallHandler, ActivityAw
 
     companion object {
         private var channelName = "flutter_unionad"
+        private var mActivity: Activity? = null
+        private var applicationContext: Context? = null
 
         @JvmStatic
         fun registerWith(registrar: Registrar) {
             val channel = MethodChannel(registrar.messenger(), channelName)
-            channel.setMethodCallHandler(FlutterUnionadPlugin())
+            this.mActivity = registrar.activity()
+            applicationContext = registrar.activeContext();
+            channel.setMethodCallHandler(FlutterUnionadPlugin().apply {
+                this.channel = channel
+            })
+            FlutterUnionadEventPlugin.registerWith(registrar)
         }
     }
 
@@ -91,7 +96,8 @@ public class FlutterUnionadPlugin : FlutterPlugin, MethodCallHandler, ActivityAw
                     Log.e("初始化", "appName can't be null")
                     result.success(false)
                 } else {
-                    TTAdManagerHolder.init(applicationContext!!,
+                    TTAdManagerHolder.init(
+                        applicationContext!!,
                         appId,
                         useTextureView!!,
                         appName,
